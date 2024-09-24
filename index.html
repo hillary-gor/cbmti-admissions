@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Download Admission Letter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      width: 300px;
+    }
+    label {
+      margin: 10px 0 5px;
+    }
+    input, button {
+      padding: 10px;
+      margin-bottom: 20px;
+    }
+    button {
+      background-color: blue;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      document.getElementById("admission-form").addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        // Get the email from the input field and ensure it's properly encoded
+        const email = encodeURIComponent(document.getElementById("email").value);
+
+        // Fetch student data from the PHP backend
+        fetch(`getStudentData.php?email=${email}`)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+            return response.json();
+          })
+          .then(studentData => {
+            if (studentData.error) {
+              alert(studentData.error); // Display the error message from PHP
+            } else {
+              // Generate the PDF with the student data
+              generatePDF(studentData);
+            }
+          })
+          .catch(error => {
+            console.error("Error fetching the student data:", error);
+            alert("There was an issue retrieving the student data. Please try again later.");
+          });
+      });
+
+      // Function to generate the PDF based on the student data
+      function generatePDF(studentData) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // Add text to the PDF
+        doc.setFontSize(22);
+        doc.text("Admission Letter", 20, 20);
+
+        doc.setFontSize(16);
+        doc.text(`Dear ${studentData.name},`, 20, 40);
+        doc.text(`We are pleased to inform you that you have been admitted to the ${studentData.course} program.`, 20, 60);
+        doc.text(`Admission Number: ${studentData.admission_number}`, 20, 80);
+        doc.text(`Academic Year: ${studentData.year}`, 20, 100);
+
+        doc.text("Congratulations and welcome to our institution.", 20, 140);
+        doc.text("Best Regards,", 20, 160);
+        doc.text("Admissions Office", 20, 180);
+
+        // Save the PDF with the student's name in the filename
+        doc.save(`${studentData.name}_Admission_Letter.pdf`);
+      }
+    });
+  </script>
+</head>
+<body>
+  <h1>Student Admission Letter</h1>
+  <form id="admission-form">
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required><br><br>
+
+    <button type="submit">Download Admission Letter</button>
+  </form>
+</body>
+</html>
